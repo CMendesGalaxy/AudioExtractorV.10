@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.send("Backend online");
+    res.send("Backend Vimeo online");
 });
 
 app.post("/download", async (req, res) => {
@@ -21,6 +21,15 @@ app.post("/download", async (req, res) => {
         if (!url) {
             return res.status(400).json({
                 error: "URL inválida"
+            });
+        }
+
+        // Permite apenas Vimeo
+        if (
+            !url.includes("vimeo.com")
+        ) {
+            return res.status(400).json({
+                error: "Apenas links Vimeo são permitidos"
             });
         }
 
@@ -59,7 +68,7 @@ app.post("/download", async (req, res) => {
             if (code !== 0) {
 
                 return res.status(500).json({
-                    error: "Falha ao baixar"
+                    error: "Falha ao baixar Vimeo"
                 });
             }
 
