@@ -27,13 +27,31 @@ app.post("/download", async (req, res) => {
         const file = `audio_${Date.now()}.mp3`;
 
         const command =
-            `yt-dlp -x --audio-format mp3 -o "${file}" "${url}"`;
+`python3 -m yt_dlp \
+--no-playlist \
+-x \
+--audio-format mp3 \
+-o "${file}" \
+"${url}"`;
 
-        exec(command, (err, stdout, stderr) => {
+        console.log("INICIANDO DOWNLOAD...");
+        console.log(command);
+
+        exec(command, {
+            timeout: 120000,
+            maxBuffer: 1024 * 1024 * 20
+        }, (err, stdout, stderr) => {
+
+            console.log("STDOUT:");
+            console.log(stdout);
+
+            console.log("STDERR:");
+            console.log(stderr);
 
             if (err) {
 
-                console.log(stderr);
+                console.log("ERRO:");
+                console.log(err);
 
                 return res.status(500).json({
                     error: "Falha ao baixar"
@@ -41,6 +59,7 @@ app.post("/download", async (req, res) => {
             }
 
             if (!fs.existsSync(file)) {
+
                 return res.status(500).json({
                     error: "Arquivo não gerado"
                 });
@@ -49,8 +68,15 @@ app.post("/download", async (req, res) => {
             res.download(file, "audio.mp3", () => {
 
                 try {
+
                     fs.unlinkSync(file);
-                } catch {}
+
+                    console.log("Arquivo removido");
+
+                } catch(e) {
+
+                    console.log(e);
+                }
             });
         });
 
