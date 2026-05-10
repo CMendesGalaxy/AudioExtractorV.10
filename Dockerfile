@@ -1,13 +1,18 @@
-FROM node:20
+FROM node:20-bookworm
 
-RUN apt update && apt install -y ffmpeg python3 python3-pip
-RUN pip3 install yt-dlp
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip ffmpeg && \
+    apt-get clean
+
+RUN pip3 install --break-system-packages yt-dlp
 
 WORKDIR /app
 
-COPY . .
+COPY package*.json ./
 
 RUN npm install
+
+COPY . .
 
 EXPOSE 3000
 
