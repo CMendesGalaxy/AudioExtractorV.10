@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs");
 
 const app = express();
@@ -26,32 +26,37 @@ app.post("/download", async (req, res) => {
 
         const file = `audio_${Date.now()}.mp3`;
 
-        const command =
-`python3 -m yt_dlp \
---no-playlist \
--x \
---audio-format mp3 \
--o "${file}" \
-"${url}"`;
-
         console.log("INICIANDO DOWNLOAD...");
-        console.log(command);
+        console.log(url);
 
-        exec(command, {
-            timeout: 120000,
-            maxBuffer: 1024 * 1024 * 20
-        }, (err, stdout, stderr) => {
+        const process = spawn("yt-dlp", [
+            "--no-playlist",
+            "-f", "bestaudio",
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--no-warnings",
+            "--restrict-filenames",
+            "-o", file,
+            url
+        ]);
+
+        process.stdout.on("data", (data) => {
 
             console.log("STDOUT:");
-            console.log(stdout);
+            console.log(data.toString());
+        });
+
+        process.stderr.on("data", (data) => {
 
             console.log("STDERR:");
-            console.log(stderr);
+            console.log(data.toString());
+        });
 
-            if (err) {
+        process.on("close", (code) => {
 
-                console.log("ERRO:");
-                console.log(err);
+            console.log("FINALIZADO:", code);
+
+            if (code !== 0) {
 
                 return res.status(500).json({
                     error: "Falha ao baixar"
@@ -64,6 +69,8 @@ app.post("/download", async (req, res) => {
                     error: "Arquivo não gerado"
                 });
             }
+
+            console.log("ENVIANDO ARQUIVO...");
 
             res.download(file, "audio.mp3", () => {
 
@@ -82,6 +89,7 @@ app.post("/download", async (req, res) => {
 
     } catch (e) {
 
+        console.log("ERRO INTERNO:");
         console.log(e);
 
         res.status(500).json({
